@@ -1,7 +1,10 @@
 package com.mariodev.doodlekong.di
 
+import android.content.Context
 import com.google.gson.Gson
 import com.mariodev.doodlekong.data.remote.api.SetupApi
+import com.mariodev.doodlekong.repository.DefaultSetupRepository
+import com.mariodev.doodlekong.repository.SetupRepository
 import com.mariodev.doodlekong.util.Constants.HTTP_BASE_URL
 import com.mariodev.doodlekong.util.Constants.HTTP_BASE_URL_LOCALHOST
 import com.mariodev.doodlekong.util.Constants.USE_LOCALHOST
@@ -9,10 +12,10 @@ import com.mariodev.doodlekong.util.DispatcherProvider
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
-import okhttp3.Dispatcher
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -22,6 +25,13 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
+
+    @Singleton
+    @Provides
+    fun provideSetupRepository(
+        setupApi: SetupApi,
+        @ApplicationContext context: Context
+    ): SetupRepository = DefaultSetupRepository(setupApi, context)
 
     @Singleton
     @Provides
@@ -38,9 +48,17 @@ object AppModule {
     fun provideSetupApi(okHttpClient: OkHttpClient): SetupApi {
         return Retrofit.Builder()
             .baseUrl(if (USE_LOCALHOST) HTTP_BASE_URL_LOCALHOST else HTTP_BASE_URL)
-            .addConverterFactory(GsonConverterFactory.create()).client(okHttpClient).build()
+            .addConverterFactory(GsonConverterFactory.create())
+            .client(okHttpClient)
+            .build()
             .create(SetupApi::class.java)
     }
+
+    @Singleton
+    @Provides
+    fun provideApplicationContext(
+        @ApplicationContext context: Context
+    ) = context
 
     @Singleton
     @Provides

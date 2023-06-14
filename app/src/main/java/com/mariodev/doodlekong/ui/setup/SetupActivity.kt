@@ -5,7 +5,10 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatDelegate
 import com.mariodev.doodlekong.R
 import com.mariodev.doodlekong.databinding.ActivitySetupBinding
+import dagger.hilt.android.AndroidEntryPoint
 
+
+@AndroidEntryPoint
 class SetupActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySetupBinding
