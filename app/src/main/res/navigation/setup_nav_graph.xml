@@ -16,15 +16,16 @@
         android:id="@+id/selectRoomFragment"
         android:name="com.mariodev.doodlekong.ui.setup.fragments.SelectRoomFragment"
         android:label="SelectRoomFragment" >
+        <argument
+            android:name="username"
+            app:argType="string" />
         <action
             android:id="@+id/action_selectRoomFragment_to_createRoomFragment"
             app:destination="@id/createRoomFragment" />
         <action
             android:id="@+id/action_selectRoomFragment_to_drawingActivity"
             app:destination="@id/drawingActivity" />
-        <argument
-            android:name="username"
-            app:argType="string" />
+
     </fragment>
     <fragment
         android:id="@+id/createRoomFragment"
