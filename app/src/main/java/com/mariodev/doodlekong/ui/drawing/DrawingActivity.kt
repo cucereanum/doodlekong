@@ -2,7 +2,6 @@ package com.mariodev.doodlekong.ui.drawing
 
 import android.graphics.Color
 import android.os.Bundle
-import android.os.PersistableBundle
 import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
@@ -109,8 +108,11 @@ class DrawingActivity : AppCompatActivity() {
             hideKeyboard(binding.root)
         }
 
-        binding.ibUndo.setOnClickListener {
+        binding.drawingView.setPathDataChangedListener {
+            viewModel.setPathData(it)
+        }
 
+        binding.ibUndo.setOnClickListener {
             if (binding.drawingView.isUserDrawing) {
                 binding.drawingView.undo()
                 viewModel.sendBaseModel(DrawAction(DrawAction.ACTION_UNDO))
@@ -121,6 +123,19 @@ class DrawingActivity : AppCompatActivity() {
             if (binding.drawingView.isUserDrawing) {
                 viewModel.sendBaseModel(it)
             }
+        }
+    }
+
+    private fun setColorGroupVisibility(isVisible: Boolean) {
+        binding.colorGroup.isVisible = isVisible
+        binding.ibUndo.isVisible = isVisible
+    }
+
+    private fun setMessageInputVisibility(isVisible: Boolean) {
+        binding.apply {
+            tilMessage.isVisible = isVisible
+            ibSend.isVisible = isVisible
+            ibClearText.isVisible = isVisible
         }
     }
 
@@ -184,6 +199,19 @@ class DrawingActivity : AppCompatActivity() {
                 }
             }
 
+        }
+        lifecycleScope.launchWhenStarted {
+            viewModel.gameState.collect { gameState ->
+             binding.apply {
+                 tvCurWord.text = gameState.word
+                 val isUserDrawing = gameState.drawingPlayer == args.username
+                 setColorGroupVisibility(isUserDrawing)
+                 setMessageInputVisibility(!isUserDrawing)
+                 drawingView.isUserDrawing = isUserDrawing
+                 ibMic.isVisible = !isUserDrawing
+                 drawingView.isEnabled = isUserDrawing
+             }
+            }
         }
         lifecycleScope.launchWhenStarted {
             viewModel.phaseTime.collect { time ->
@@ -267,6 +295,9 @@ class DrawingActivity : AppCompatActivity() {
                             )
                         }
                     }
+                }
+                is DrawingViewModel.SocketEvent.GameStateEvent -> {
+                    binding.drawingView.clear()
                 }
                 is DrawingViewModel.SocketEvent.ChosenWordEvent -> {
                     binding.tvCurWord.text = event.data.chosenWord
