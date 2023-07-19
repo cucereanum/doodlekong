@@ -11,6 +11,7 @@ import com.mariodev.doodlekong.databinding.FragmentUsernameBinding
 import com.mariodev.doodlekong.ui.setup.UsernameViewModel
 import com.mariodev.doodlekong.util.Constants.MAX_USERNAME_LENGTH
 import com.mariodev.doodlekong.util.Constants.MIN_USERNAME_LENGTH
+import com.mariodev.doodlekong.util.hideKeyboard
 import com.mariodev.doodlekong.util.navigateSafely
 import com.mariodev.doodlekong.util.snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -35,6 +36,7 @@ class UsernameFragment : Fragment(R.layout.fragment_username) {
             viewModel.validateUsernameAndNavigateToSelectRoom(
                 binding.etUsername.text.toString()
             )
+            requireActivity().hideKeyboard(binding.root)
         }
 
     }

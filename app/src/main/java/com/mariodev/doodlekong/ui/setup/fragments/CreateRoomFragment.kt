@@ -15,6 +15,7 @@ import com.mariodev.doodlekong.data.remote.ws.Room
 import com.mariodev.doodlekong.databinding.FragmentCreateRoomBinding
 import com.mariodev.doodlekong.ui.setup.CreateRoomViewModel
 import com.mariodev.doodlekong.util.Constants
+import com.mariodev.doodlekong.util.hideKeyboard
 import com.mariodev.doodlekong.util.navigateSafely
 import com.mariodev.doodlekong.util.snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -47,6 +48,7 @@ class CreateRoomFragment : Fragment(R.layout.fragment_create_room) {
                     maxPlayers = binding.tvMaxPersons.text.toString().toInt()
                 )
             )
+            requireActivity().hideKeyboard(binding.root)
         }
     }
 
