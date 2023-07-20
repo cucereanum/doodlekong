@@ -3,12 +3,15 @@ package com.mariodev.doodlekong.ui.drawing
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
+import com.google.gson.JsonParser
 import com.mariodev.doodlekong.R
 import com.mariodev.doodlekong.data.remote.ws.DrawingApi
 import com.mariodev.doodlekong.data.remote.ws.Room
 import com.mariodev.doodlekong.data.remote.ws.models.*
 import com.mariodev.doodlekong.data.remote.ws.models.DrawAction.Companion.ACTION_UNDO
 import com.mariodev.doodlekong.ui.views.DrawingView
+import com.mariodev.doodlekong.util.Constants.TYPE_DRAW_ACTION
+import com.mariodev.doodlekong.util.Constants.TYPE_DRAW_DATA
 import com.mariodev.doodlekong.util.CoroutineTimer
 import com.mariodev.doodlekong.util.DispatcherProvider
 import com.tinder.scarlet.WebSocket
@@ -35,12 +38,15 @@ class DrawingViewModel @Inject constructor(
         data class NewWordsEvent(val data: NewWords) : SocketEvent()
         data class ChosenWordEvent(val data: ChosenWord) : SocketEvent()
         data class GameErrorEvent(val data: GameError) : SocketEvent()
-        data class RoundDrawInfoEvent(val data: RoundDrawInfo) : SocketEvent()
+        data class RoundDrawInfoEvent(val data: List<BaseModel>) : SocketEvent()
         object UndoEvent : SocketEvent()
     }
 
     private val _pathData = MutableStateFlow(Stack<DrawingView.PathData>())
     val pathData: StateFlow<Stack<DrawingView.PathData>> = _pathData
+
+    private val _players = MutableStateFlow<List<PlayerData>>(listOf())
+    val players: StateFlow<List<PlayerData>> = _players
 
     private val _newWords = MutableStateFlow(NewWords(listOf()))
     val newWords: StateFlow<NewWords> = _newWords
@@ -51,7 +57,7 @@ class DrawingViewModel @Inject constructor(
     private val _phaseTime = MutableStateFlow(0L)
     val phaseTime: StateFlow<Long> = _phaseTime
 
-    private val _gameState = MutableStateFlow(GameState("",""))
+    private val _gameState = MutableStateFlow(GameState("", ""))
     val gameState: StateFlow<GameState> = _gameState
 
     private val _chat = MutableStateFlow<List<BaseModel>>(listOf())
@@ -129,8 +135,24 @@ class DrawingViewModel @Inject constructor(
                     is ChosenWord -> {
                         socketEventChannel.send(SocketEvent.ChosenWordEvent(data))
                     }
+                    is RoundDrawInfo -> {
+                        val drawActions = mutableListOf<BaseModel>()
+                        data.data.forEach { drawAction ->
+                            val jsonObject = JsonParser.parseString(drawAction).asJsonObject
+                            val type = when (jsonObject.get("type").asString) {
+                                TYPE_DRAW_DATA -> DrawData::class.java
+                                TYPE_DRAW_ACTION -> DrawAction::class.java
+                                else -> BaseModel::class.java
+                            }
+                            drawActions.add(gson.fromJson(drawAction, type))
+                        }
+                        socketEventChannel.send(SocketEvent.RoundDrawInfoEvent(drawActions))
+                    }
                     is Announcement -> {
                         socketEventChannel.send(SocketEvent.AnnouncementEvent(data))
+                    }
+                    is PlayersList -> {
+                        _players.value = data.players
                     }
                     is NewWords -> {
                         _newWords.value = data

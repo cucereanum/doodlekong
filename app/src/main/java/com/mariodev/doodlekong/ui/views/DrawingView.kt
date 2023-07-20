@@ -11,6 +11,9 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.MotionEvent.*
 import android.view.View
+import com.mariodev.doodlekong.data.remote.ws.models.BaseModel
+import com.mariodev.doodlekong.data.remote.ws.models.DrawAction
+import com.mariodev.doodlekong.data.remote.ws.models.DrawAction.Companion.ACTION_UNDO
 import com.mariodev.doodlekong.data.remote.ws.models.DrawData
 import com.mariodev.doodlekong.util.Constants
 import java.util.Stack
@@ -70,6 +73,26 @@ class DrawingView @JvmOverloads constructor(
         viewHeight = h
         bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         canvas = Canvas(bmp!!)
+    }
+
+    fun update (drawActions: List<BaseModel>) {
+        drawActions.forEach {
+            drawAction ->
+            when(drawAction) {
+                is DrawData -> {
+                    when(drawAction.motionEvent) {
+                        ACTION_DOWN -> startedTouchExternally(drawAction)
+                        ACTION_MOVE -> movedTouchExternally(drawAction)
+                        ACTION_UP -> releasedTouchExternally(drawAction)
+                    }
+                }
+                is DrawAction -> {
+                    when(drawAction.action) {
+                        ACTION_UNDO -> undo()
+                    }
+                }
+            }
+        }
     }
 
     override fun onDraw(canvas: Canvas?) {

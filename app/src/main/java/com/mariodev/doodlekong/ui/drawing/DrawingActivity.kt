@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
 import com.mariodev.doodlekong.R
 import com.mariodev.doodlekong.adapters.ChatMessageAdapter
+import com.mariodev.doodlekong.adapters.PlayerAdapter
 import com.mariodev.doodlekong.data.remote.ws.Room
 import com.mariodev.doodlekong.data.remote.ws.models.*
 import com.mariodev.doodlekong.databinding.ActivityDrawingBinding
@@ -46,9 +47,13 @@ class DrawingActivity : AppCompatActivity() {
     private lateinit var toggle: ActionBarDrawerToggle
     private lateinit var rvPlayers: RecyclerView
 
+    @Inject
+     lateinit var playerAdapter: PlayerAdapter
+
     private lateinit var chatMessageAdapter: ChatMessageAdapter
 
     private var updateChatJob: Job? = null
+    private var updatePlayersJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -71,6 +76,11 @@ class DrawingActivity : AppCompatActivity() {
         val header = layoutInflater.inflate(R.layout.nav_drawer_header, binding.navView)
         rvPlayers = header.findViewById(R.id.rvPlayers)
         binding.root.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
+
+        rvPlayers.apply {
+            adapter = playerAdapter
+            layoutManager = LinearLayoutManager(this@DrawingActivity)
+        }
 
         binding.ibPlayers.setOnClickListener {
             binding.root.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED)
@@ -202,15 +212,21 @@ class DrawingActivity : AppCompatActivity() {
         }
         lifecycleScope.launchWhenStarted {
             viewModel.gameState.collect { gameState ->
-             binding.apply {
-                 tvCurWord.text = gameState.word
-                 val isUserDrawing = gameState.drawingPlayer == args.username
-                 setColorGroupVisibility(isUserDrawing)
-                 setMessageInputVisibility(!isUserDrawing)
-                 drawingView.isUserDrawing = isUserDrawing
-                 ibMic.isVisible = !isUserDrawing
-                 drawingView.isEnabled = isUserDrawing
-             }
+                binding.apply {
+                    tvCurWord.text = gameState.word
+                    val isUserDrawing = gameState.drawingPlayer == args.username
+                    setColorGroupVisibility(isUserDrawing)
+                    setMessageInputVisibility(!isUserDrawing)
+                    drawingView.isUserDrawing = isUserDrawing
+                    ibMic.isVisible = !isUserDrawing
+                    drawingView.isEnabled = isUserDrawing
+                }
+            }
+        }
+        lifecycleScope.launchWhenStarted {
+            viewModel.players.collect { players ->
+                updatePlayersList(players)
+
             }
         }
         lifecycleScope.launchWhenStarted {
@@ -252,7 +268,7 @@ class DrawingActivity : AppCompatActivity() {
                     }
                     Room.Phase.SHOW_WORD -> {
                         binding.apply {
-                            if(drawingView.isDrawing) {
+                            if (drawingView.isDrawing) {
                                 drawingView.finishOffDrawing()
                             }
                             drawingView.isEnabled = false
@@ -295,6 +311,9 @@ class DrawingActivity : AppCompatActivity() {
                             )
                         }
                     }
+                }
+                is DrawingViewModel.SocketEvent.RoundDrawInfoEvent -> {
+                    binding.drawingView.update(event.data)
                 }
                 is DrawingViewModel.SocketEvent.GameStateEvent -> {
                     binding.drawingView.clear()
@@ -353,6 +372,13 @@ class DrawingActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         binding.rvChat.layoutManager?.onSaveInstanceState()
+    }
+
+    private fun updatePlayersList(players: List<PlayerData>) {
+        updatePlayersJob?.cancel()
+        updatePlayersJob = lifecycleScope.launch {
+            playerAdapter.updateDataset(players)
+        }
     }
 
     private fun updateChatMessageList(chat: List<BaseModel>) {
