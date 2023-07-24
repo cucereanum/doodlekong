@@ -95,6 +95,10 @@ class DrawingView @JvmOverloads constructor(
         }
     }
 
+    fun setPaths(pathData: Stack<PathData>) {
+        this.paths = pathData
+    }
+
     override fun onDraw(canvas: Canvas?) {
         super.onDraw(canvas)
         val initialColor = paint.color

@@ -303,6 +303,11 @@ class DrawingActivity : AppCompatActivity(), LifecycleObserver,
             }
         }
         lifecycleScope.launchWhenStarted {
+            viewModel.pathData.collect { pathData ->
+                binding.drawingView.setPaths(pathData)
+            }
+        }
+        lifecycleScope.launchWhenStarted {
             viewModel.newWords.collect {
                 val newWords = it.newWords
                 if (newWords.isEmpty()) {
@@ -357,6 +362,7 @@ class DrawingActivity : AppCompatActivity(), LifecycleObserver,
                     val isUserDrawing = gameState.drawingPlayer == args.username
                     setColorGroupVisibility(isUserDrawing)
                     setMessageInputVisibility(!isUserDrawing)
+                    ibUndo.isEnabled = isUserDrawing
                     drawingView.isUserDrawing = isUserDrawing
                     ibMic.isVisible = !isUserDrawing
                     drawingView.isEnabled = isUserDrawing
